@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>RoadRaise</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom Fonts -->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+  <link href="vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link href="css/roadraise.css" rel="stylesheet">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <script type="text/javascript">
+    /*
+      $(function()
+      {
+          $(document).on('click', '.btn-add', function(e)
+          {
+              e.preventDefault();
+              var controlForm = $('#myRepeatingFields:first'),
+                  currentEntry = $(this).parents('.entry:first'),
+                  newEntry = $(currentEntry.clone()).appendTo(controlForm);
+              newEntry.find('input').val('');
+              controlForm.find('.entry:not(:last) .btn-add')
+                  .removeClass('btn-add').addClass('btn-remove')
+                  .removeClass('btn-success').addClass('btn-danger')
+                  .html('');
+          }).on('click', '.btn-remove', function(e)
+          {
+              e.preventDefault();
+              $(this).parents('.entry:first').remove();
+              return false;
+          });
+      });
+
+      function preview_images()
+      {
+          var total_file=document.getElementById("images").files.length;
+          for(var i=0;i<total_file;i++)
+          {
+              $('#image_preview').append("<div class='col-md-3'><img class='img-responsive' src='"+URL.createObjectURL(event.target.files[i])+"'></div>");
+          }
+      }
+
+      $('#add_more').click(function() {
+          "use strict";
+          $(this).before($("<div/>", {
+              id: 'filediv'
+          }).fadeIn('slow').append(
+              $("<input/>", {
+                  name: 'file[]',
+                  type: 'file',
+                  id: 'file',
+                  multiple: 'multiple',
+                  accept: 'image/*'
+              })
+          ));
+      });
+
+      $('#upload').click(function(e) {
+          "use strict";
+          e.preventDefault();
+
+          if (window.filesToUpload.length === 0 || typeof window.filesToUpload === "undefined") {
+              alert("No files are selected.");
+              return false;
+          }
+
+          // Now, upload the files below...
+          // https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications#Handling_the_upload_process_for_a_file.2C_asynchronously
+      });
+
+      deletePreview = function (ele, i) {
+          "use strict";
+          try {
+              $(ele).parent().remove();
+              window.filesToUpload.splice(i, 1);
+          } catch (e) {
+              console.log(e.message);
+          }
+      }
+
+      $("#file").on('change', function() {
+          "use strict";
+
+          // create an empty array for the files to reside.
+          window.filesToUpload = [];
+
+          if (this.files.length >= 1) {
+              $("[id^=previewImg]").remove();
+              $.each(this.files, function(i, img) {
+                  var reader = new FileReader(),
+                      newElement = $("<div id='previewImg" + i + "' class='previewBox'><img /></div>"),
+                      deleteBtn = $("<span class='delete' onClick='deletePreview(this, " + i + ")'>X</span>").prependTo(newElement),
+                      preview = newElement.find("img");
+
+                  reader.onloadend = function() {
+                      preview.attr("src", reader.result);
+                      preview.attr("alt", img.name);
+                  };
+
+                  try {
+                      window.filesToUpload.push(document.getElementById("file").files[i]);
+                  } catch (e) {
+                      console.log(e.message);
+                  }
+
+                  if (img) {
+                      reader.readAsDataURL(img);
+                  } else {
+                      preview.src = "";
+                  }
+
+                  newElement.appendTo("#filediv");
+              });
+          }
+      });
+      */
+  </script>
+
+  <script type="text/javascript">
+      jQuery(document).ready(function($) {
+          "use strict";
+
+          //Contact
+          $('form.tripForm').submit(function() {
+              var f = $(this).find('.form-group'),
+                  ferror = false,
+                  emailExp = /^[^\s()<>@,;:\/]+@\w[\w\.-]+\.[a-z]{2,}$/i,
+                  phoneExp = /^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/i;
+
+              f.children('input').each(function() { // run all inputs
+
+                  var i = $(this); // current input
+                  var rule = i.attr('data-rule');
+
+                  if (rule !== undefined) {
+                      var ierror = false; // error flag for current input
+                      var pos = rule.indexOf(':', 0);
+                      if (pos >= 0) {
+                          var exp = rule.substr(pos + 1, rule.length);
+                          rule = rule.substr(0, pos);
+                      } else {
+                          rule = rule.substr(pos + 1, rule.length);
+                      }
+
+                      switch (rule) {
+                          case 'required':
+                              if (i.val() === '') {
+                                  ferror = ierror = true;
+                              }
+                              break;
+
+                          case 'minlen':
+                              if (i.val().length < parseInt(exp)) {
+                                  ferror = ierror = true;
+                              }
+                              break;
+
+                          case 'email':
+                              if (!emailExp.test(i.val())) {
+                                  ferror = ierror = true;
+                              }
+                              break;
+
+                          case 'phone':
+                              if (!phoneExp.test(i.val())) {
+                                  ferror = ierror = true;
+                              }
+                              break;
+
+                          case 'checked':
+                              if (! i.is(':checked')) {
+                                  ferror = ierror = true;
+                              }
+                              break;
+
+                          case 'regexp':
+                              exp = new RegExp(exp);
+                              if (!exp.test(i.val())) {
+                                  ferror = ierror = true;
+                              }
+                              break;
+                      }
+                      i.next('.validation').html((ierror ? (i.attr('data-msg') !== undefined ? i.attr('data-msg') : 'wrong Input') : '')).show('blind');
+                  }
+              });
+              f.children('textarea').each(function() { // run all inputs
+
+                  var i = $(this); // current input
+                  var rule = i.attr('data-rule');
+
+                  if (rule !== undefined) {
+                      var ierror = false; // error flag for current input
+                      var pos = rule.indexOf(':', 0);
+                      if (pos >= 0) {
+                          var exp = rule.substr(pos + 1, rule.length);
+                          rule = rule.substr(0, pos);
+                      } else {
+                          rule = rule.substr(pos + 1, rule.length);
+                      }
+
+                      switch (rule) {
+                          case 'required':
+                              if (i.val() === '') {
+                                  ferror = ierror = true;
+                              }
+                              break;
+
+                          case 'minlen':
+                              if (i.val().length < parseInt(exp)) {
+                                  ferror = ierror = true;
+                              }
+                              break;
+                      }
+                      i.next('.validation').html((ierror ? (i.attr('data-msg') != undefined ? i.attr('data-msg') : 'wrong Input') : '')).show('blind');
+                  }
+              });
+              if (ferror) return false;
+              else var data = createJSON($(this).serializeArray());
+              console.log(data);
+              $.ajax({
+                  type: "POST",
+                  url: "https://wjr1txbeff.execute-api.us-east-1.amazonaws.com/PROD/stops",
+                  data: data,
+                  dataType: 'json',
+                  crossDomain: true,
+                  success: function(msg) {
+                      //alert(msg);
+                      if (msg.status == 'success') {
+                          //$("#sendmessage").addClass("show");
+                          //$("#errormessage").removeClass("show");
+                          //$('.tripForm').find("input, textarea").val("");
+                          //$("html, body").animate({ scrollTop: 0 }, "slow").delay(2000);
+                          console.log("NNNNNN")
+                          $(location).attr('href',"trip.html");
+                      } else {
+                          //$("#sendmessage").removeClass("show");
+                          console.log("AHHHH")
+                          $("#errormessage").addClass("show");
+                          if(msg) {
+                              $('#errormessage').html(msg);
+                          }
+                          $('#errormessage').html("Unknown error occurred");
+                      }
+
+                  }
+              })//.then($(location).attr('href',"https://www.roadrai.se/trip.html"));
+              return false;
+          });
+
+          function createJSON(formArray) {
+              var returnArray = {};
+              for (var i = 0; i < formArray.length; i++){
+                  returnArray[formArray[i]['name']] = formArray[i]['value'];
+              }
+              return returnArray;
+          };
+      });
+
+
+  </script>
+
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.247.1.min.js"></script>
+
+  <script>
+      //insert name of your image bucket
+      const Bucket = 'www.roadrai.se';
+      //insert identity pool id for your cognito pool
+      //you can get this by clicking Edit Identity Pool from your Cognito Pool
+      const IdentityPoolId = 'us-east-1:c687b9c1-bd98-4b98-ad55-7f97748a1c71';
+      const credentials = new AWS.CognitoIdentityCredentials({ IdentityPoolId })
+      //insert region for your image bucket
+      const region = 'us-east-1'; //e.g. 'us-east-1'
+      const bucketUrl = `https://s3.amazonaws.com/${Bucket}`
+      //uses the AWS SDK
+      //updates its configuration with your credentials and bucket region
+      AWS.config.update({
+          region,
+          credentials
+      });
+      //uses the AWS SDK
+      //creates an S3 service object that can interact with your bucket
+      const s3 = new AWS.S3({
+          apiVersion: '2006-03-01',
+          params: { Bucket }
+      });
+      function contentContainer() {
+          return document.getElementById('content')
+      }
+      //function called from index.html
+      //gets name of all objects in the s3 bucket
+      //updates HTML with the file name and image
+      /*
+      function listImages() {
+          s3.listObjects({Delimiter: 'img/'}, function(err, data) {
+              if (err) {
+                  return alert('Error: ' + err.message);
+              } else {
+                  const images = data.Contents;
+                  const fileNames = images.map(function (image) { return image.Key; });
+                  const html = fileNames.map(function(file) {
+                      return `<div class="col-md-4 panel panel-default">
+          <div class="panel-heading">${file}</div>
+          <div class="panel-body">
+            <img src="${bucketUrl}/${file}">
+          </div>
+        </div>`
+                  })
+                  contentContainer().innerHTML = html.join('');
+              }
+          });
+      }
+      */
+
+      function addImage() {
+          const files = document.getElementById('upload').files;
+          const file = files[0];
+          const fileName = file.name;
+
+          //build the params needed for the putObject call
+          const params = {
+              Key: "img/" + fileName,
+              Body: file,
+              ACL: 'public-read' //this makes the object readable
+          }
+          var finalURL = bucketUrl + '/img/' + fileName;
+          s3.putObject(params, function(err, data) {
+              if (err) {
+                  return alert('There was an error uploading your photo: ',   err.message);
+              } else {
+                  //if successful, call listImages again so we see the new image
+                  //listImages()
+
+                  document.getElementById("showImage")
+                  $( "#showImage" ).append( "<img src=" + finalURL + " />" );
+              }
+          });
+      }
+  </script>
+
+</head>
+
+<body id="page-top">
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg text-uppercase fixed-top" style="background-color:#50E3C2;" id="mainNav">
+  <b><a class="navbar-brand js-scroll-trigger" href="index.html" style="font-size: 24px">roadraise</a></b>
+
+  <a class="menu-toggle rounded" href="#">
+    <i class="fas fa-bars"></i>
+  </a>
+  </nav>
+  <nav id="sidebar-wrapper">
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+        <a class="js-scroll-trigger" href="index.html">Home</a>
+        <a class="js-scroll-trigger" href="community.html">Community</a>
+        <a class="js-scroll-trigger" href="trip.html">Trips</a>
+        <a class="js-scroll-trigger" href="plottrip.html">Plan a trip</a>
+        <a class="js-scroll-trigger" href="stop.html">Share your stops</a>
+      </li>
+    </ul>
+  </nav>
+
+  <section class="content-section bg-light" id="trip">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+
+          <h2>Capture Your Stop</h2>
+          <form class="tripForm" action="" method="post" role="form">
+            <p>Let's capture a bit of information about your stop.</p>
+
+            <div class="form-group">
+              <label for="exampleFormControlTextarea1">What are some memories of your stop?</label>
+              <textarea class="form-control" id="memories" name="memories" rows="3" required="true"></textarea>
+            </div>
+
+            <p>Share photos of your stop</p>
+
+            <div class="col-lg-12 mx-auto" id="showImage">
+              <!--
+              <input type="file" class="form-control" id="images" name="images[]" onchange="preview_images();" multiple/>
+              -->
+              <div class="form-group">
+                <input id="upload" type="file" class="form-control-file" accept="image/*" >
+              </div>
+              <button type='button' class="btn btn-info btn-xs" onclick="addImage()">Upload</button>
+            </div>
+            <!--
+            <div class="col-md-6">
+              <input type="submit" class="btn btn-primary" name='submit_image' value="Upload Multiple Image"/>
+            </div>-->
+
+            <br/>
+
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="social" name="social">
+              <label class="form-check-label" for="exampleCheck1">Share to social?</label>
+            </div>
+
+            <br/>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded js-scroll-trigger" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Plugin JavaScript -->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="js/main.js"></script>
+
+</body>
+
+</html>

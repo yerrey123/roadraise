@@ -1,0 +1,105 @@
+<html>
+<head>
+    <!-- Javascript AWS SDK  -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.247.1.min.js"></script>
+    <!-- Your Browser-Side script -->
+    <script src="./app.js"></script>
+    <!-- Latest compiled and minified Boostrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <style>
+        img { width:200px; }
+        .panel-body { height:250px; }
+    </style>
+    <script>
+        //insert name of your image bucket
+        const Bucket = 'www.roadrai.se';
+        //insert identity pool id for your cognito pool
+        //you can get this by clicking Edit Identity Pool from your Cognito Pool
+        const IdentityPoolId = 'us-east-1:c687b9c1-bd98-4b98-ad55-7f97748a1c71';
+        const credentials = new AWS.CognitoIdentityCredentials({ IdentityPoolId })
+        //insert region for your image bucket
+        const region = 'us-east-1'; //e.g. 'us-east-1'
+        const bucketUrl = `https://s3.amazonaws.com/${Bucket}`
+        //uses the AWS SDK
+        //updates its configuration with your credentials and bucket region
+        AWS.config.update({
+            region,
+            credentials
+        });
+        //uses the AWS SDK
+        //creates an S3 service object that can interact with your bucket
+        const s3 = new AWS.S3({
+            apiVersion: '2006-03-01',
+            params: { Bucket }
+        });
+        function contentContainer() {
+            return document.getElementById('content')
+        }
+        //function called from index.html
+        //gets name of all objects in the s3 bucket
+        //updates HTML with the file name and image
+        function listImages() {
+            s3.listObjects({Delimiter: 'img/'}, function(err, data) {
+                if (err) {
+                    return alert('Error: ' + err.message);
+                } else {
+                    const images = data.Contents;
+                    const fileNames = images.map(function (image) { return image.Key; });
+                    const html = fileNames.map(function(file) {
+                        return `<div class="col-md-4 panel panel-default">
+          <div class="panel-heading">${file}</div>
+          <div class="panel-body">
+            <img src="${bucketUrl}/${file}">
+          </div>
+        </div>`
+                    })
+                    contentContainer().innerHTML = html.join('');
+                }
+            });
+        }
+
+        function addImage() {
+            const files = document.getElementById('upload').files;
+            const file = files[0];
+            const fileName = file.name;
+
+            //build the params needed for the putObject call
+            const params = {
+                Key: "img/" + fileName,
+                Body: file,
+                ACL: 'public-read' //this makes the object readable
+            }
+            s3.putObject(params, function(err, data) {
+                if (err) {
+                    return alert('There was an error uploading your photo: ',   err.message);
+                } else {
+                    //if successful, call listImages again so we see the new image
+                    listImages()
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <!-- new input and button to upload an image -->
+    <div class="row">
+        <form>
+            <div class="form-group">
+                <label for="upload">Add Image</label>
+                <input id="upload" type="file" class="form-control-file" accept="image/*" >
+            </div>
+            <button type='button' class="btn btn-info btn-xs" onclick="addImage()">Upload</button>
+            <form>
+    </div>
+    <div class="row">
+        <h4>My Images</h4>
+        <div id="content"></div>
+    </div>
+</div>
+<script>
+    //calling a method on your browser-side script - app.js
+    listImages();
+</script>
+</body>
+</html>

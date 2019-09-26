@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>RoadRaise</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom Fonts -->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+  <link href="vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link href="css/roadraise.css" rel="stylesheet">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <script type="text/javascript">
+      $(function()
+      {
+          $(document).on('click', '.btn-add', function(e)
+          {
+              e.preventDefault();
+              var controlForm = $('#myRepeatingFields:first'),
+                  currentEntry = $(this).parents('.entry:first'),
+                  newEntry = $(currentEntry.clone()).appendTo(controlForm);
+              newEntry.find('input').val('');
+              controlForm.find('.entry:not(:last) .btn-add')
+                  .removeClass('btn-add').addClass('btn-remove')
+                  .removeClass('btn-success').addClass('btn-danger')
+                  .html('');
+          }).on('click', '.btn-remove', function(e)
+          {
+              e.preventDefault();
+              $(this).parents('.entry:first').remove();
+              return false;
+          });
+      });
+
+      function preview_images()
+      {
+          var total_file=document.getElementById("images").files.length;
+          for(var i=0;i<total_file;i++)
+          {
+              $('#image_preview').append("<div class='col-md-3'><img class='img-responsive' src='"+URL.createObjectURL(event.target.files[i])+"'></div>");
+          }
+      }
+
+      $('#add_more').click(function() {
+          "use strict";
+          $(this).before($("<div/>", {
+              id: 'filediv'
+          }).fadeIn('slow').append(
+              $("<input/>", {
+                  name: 'file[]',
+                  type: 'file',
+                  id: 'file',
+                  multiple: 'multiple',
+                  accept: 'image/*'
+              })
+          ));
+      });
+
+      $('#upload').click(function(e) {
+          "use strict";
+          e.preventDefault();
+
+          if (window.filesToUpload.length === 0 || typeof window.filesToUpload === "undefined") {
+              alert("No files are selected.");
+              return false;
+          }
+
+          // Now, upload the files below...
+          // https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications#Handling_the_upload_process_for_a_file.2C_asynchronously
+      });
+
+      deletePreview = function (ele, i) {
+          "use strict";
+          try {
+              $(ele).parent().remove();
+              window.filesToUpload.splice(i, 1);
+          } catch (e) {
+              console.log(e.message);
+          }
+      }
+
+      $("#file").on('change', function() {
+          "use strict";
+
+          // create an empty array for the files to reside.
+          window.filesToUpload = [];
+
+          if (this.files.length >= 1) {
+              $("[id^=previewImg]").remove();
+              $.each(this.files, function(i, img) {
+                  var reader = new FileReader(),
+                      newElement = $("<div id='previewImg" + i + "' class='previewBox'><img /></div>"),
+                      deleteBtn = $("<span class='delete' onClick='deletePreview(this, " + i + ")'>X</span>").prependTo(newElement),
+                      preview = newElement.find("img");
+
+                  reader.onloadend = function() {
+                      preview.attr("src", reader.result);
+                      preview.attr("alt", img.name);
+                  };
+
+                  try {
+                      window.filesToUpload.push(document.getElementById("file").files[i]);
+                  } catch (e) {
+                      console.log(e.message);
+                  }
+
+                  if (img) {
+                      reader.readAsDataURL(img);
+                  } else {
+                      preview.src = "";
+                  }
+
+                  newElement.appendTo("#filediv");
+              });
+          }
+      });
+  </script>
+
+
+  <!-- Resources -->
+  <script src="https://www.amcharts.com/lib/4/core.js"></script>
+  <script src="https://www.amcharts.com/lib/4/maps.js"></script>
+  <script src="https://www.amcharts.com/lib/4/geodata/worldLow.js"></script>
+  <script src="https://www.amcharts.com/lib/4/themes/dark.js"></script>
+  <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+
+  <!-- Chart code -->
+  <script>
+      am4core.ready(function() {
+
+          // Themes begin
+          am4core.useTheme(am4themes_dark);
+          am4core.useTheme(am4themes_animated);
+          // Themes end
+
+          // Create map instance
+          var chart = am4core.create("chartdiv", am4maps.MapChart);
+          chart.geodata = am4geodata_worldLow;
+          chart.projection = new am4maps.projections.Miller();
+          chart.homeZoomLevel = 7;
+          chart.homeGeoPoint = {
+              latitude: 36.1627,
+              longitude: -86.7816
+          };
+
+          // Create map polygon series
+          var polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
+          polygonSeries.useGeodata = true;
+          polygonSeries.mapPolygons.template.fill = chart.colors.getIndex(0).lighten(0.5);
+          polygonSeries.mapPolygons.template.nonScalingStroke = true;
+          polygonSeries.exclude = ["AQ"];
+
+          // Add line bullets
+          var cities = chart.series.push(new am4maps.MapImageSeries());
+          cities.mapImages.template.nonScaling = true;
+
+          var city = cities.mapImages.template.createChild(am4core.Circle);
+          city.radius = 6;
+          city.fill = chart.colors.getIndex(0).brighten(-0.2);
+          city.strokeWidth = 2;
+          city.stroke = am4core.color("#fff");
+
+          function addCity(coords, title) {
+              var city = cities.mapImages.create();
+              city.latitude = coords.latitude;
+              city.longitude = coords.longitude;
+              city.tooltipText = title;
+              return city;
+          }
+
+          var ny = addCity({ "latitude": 40.725910, "longitude": -74.004753 }, "New York");
+          var nj = addCity({ "latitude": 40.058323, "longitude": -74.405663 }, "New Jersey");
+          var dc = addCity({ "latitude": 38.907192, "longitude": -77.036873}, "Washington DC");
+          var nc = addCity({ "latitude": 35.779591, "longitude": -78.638176 }, "North Carolina");
+          var ga = addCity({ "latitude": 33.748997, "longitude": -84.387985 }, "Georgia");
+          var la = addCity({ "latitude": 30.748997, "longitude": -90.387985 }, "New Orleans");
+
+
+          // Add lines
+          var lineSeries = chart.series.push(new am4maps.MapArcSeries());
+          lineSeries.mapLines.template.line.strokeWidth = 2;
+          lineSeries.mapLines.template.line.strokeOpacity = 0.5;
+          lineSeries.mapLines.template.line.stroke = city.fill;
+          lineSeries.mapLines.template.line.nonScalingStroke = true;
+          lineSeries.mapLines.template.line.strokeDasharray = "1,1";
+          lineSeries.zIndex = 10;
+
+          var shadowLineSeries = chart.series.push(new am4maps.MapLineSeries());
+          shadowLineSeries.mapLines.template.line.strokeOpacity = 0;
+          shadowLineSeries.mapLines.template.line.nonScalingStroke = true;
+          shadowLineSeries.mapLines.template.shortestDistance = false;
+          shadowLineSeries.zIndex = 5;
+
+          function addLine(from, to) {
+              var line = lineSeries.mapLines.create();
+              line.imagesToConnect = [from, to];
+              line.line.controlPointDistance = -0.3;
+
+              var shadowLine = shadowLineSeries.mapLines.create();
+              shadowLine.imagesToConnect = [from, to];
+
+              return line;
+          }
+
+          addLine(ny, nj);
+          addLine(nj, dc);
+          addLine(dc, nc);
+          addLine(nc, ga);
+          addLine(ga, la);
+
+          // Add plane
+          var plane = lineSeries.mapLines.getIndex(0).lineObjects.create();
+          plane.position = 0;
+          plane.width = 48;
+          plane.height = 48;
+
+          plane.adapter.add("scale", function(scale, target) {
+              return 0.5 * (1 - (Math.abs(0.5 - target.position)));
+          })
+
+          var planeImage = plane.createChild(am4core.Sprite);
+          planeImage.scale = 0.02;
+          planeImage.horizontalCenter = "middle";
+          planeImage.verticalCenter = "middle";
+          planeImage.path = "M488 128h-8V80c0-44.8-99.2-80-224-80S32 35.2 32 80v48h-8c-13.25 0-24 10.74-24 24v80c0 13.25 10.75 24 24 24h8v160c0 17.67 14.33 32 32 32v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h192v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h6.4c16 0 25.6-12.8 25.6-25.6V256h8c13.25 0 24-10.75 24-24v-80c0-13.26-10.75-24-24-24zM112 400c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm16-112c-17.67 0-32-14.33-32-32V128c0-17.67 14.33-32 32-32h256c17.67 0 32 14.33 32 32v128c0 17.67-14.33 32-32 32H128zm272 112c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z";
+          planeImage.fill = chart.colors.getIndex(2).brighten(-0.2);
+          planeImage.strokeOpacity = 0;
+
+          var shadowPlane = shadowLineSeries.mapLines.getIndex(0).lineObjects.create();
+          shadowPlane.position = 0;
+          shadowPlane.width = 48;
+          shadowPlane.height = 48;
+
+        /*
+         var shadowPlaneImage = shadowPlane.createChild(am4core.Sprite);
+         shadowPlaneImage.scale = 0.02;
+         shadowPlaneImage.horizontalCenter = "middle";
+         shadowPlaneImage.verticalCenter = "middle";
+         shadowPlaneImage.path = "M488 128h-8V80c0-44.8-99.2-80-224-80S32 35.2 32 80v48h-8c-13.25 0-24 10.74-24 24v80c0 13.25 10.75 24 24 24h8v160c0 17.67 14.33 32 32 32v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h192v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h6.4c16 0 25.6-12.8 25.6-25.6V256h8c13.25 0 24-10.75 24-24v-80c0-13.26-10.75-24-24-24zM112 400c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm16-112c-17.67 0-32-14.33-32-32V128c0-17.67 14.33-32 32-32h256c17.67 0 32 14.33 32 32v128c0 17.67-14.33 32-32 32H128zm272 112c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z";
+         shadowPlaneImage.fill = am4core.color("#000");
+         shadowPlaneImage.strokeOpacity = 0;
+
+         shadowPlane.adapter.add("scale", function(scale, target) {
+         target.opacity = (0.6 - (Math.abs(0.5 - target.position)));
+         return 0.5 - 0.3 * (1 - (Math.abs(0.5 - target.position)));
+         })
+         */
+
+          // Plane animation
+          var currentLine = 0;
+          var direction = 1;
+          function flyPlane() {
+
+              // Get current line to attach plane to
+              plane.mapLine = lineSeries.mapLines.getIndex(currentLine);
+              plane.parent = lineSeries;
+              planeImage.rotation = 190;
+            /*
+             shadowPlane.mapLine = shadowLineSeries.mapLines.getIndex(currentLine);
+             shadowPlane.parent = shadowLineSeries;
+             */
+              //shadowPlaneImage.rotation = planeImage.rotation;
+
+              // Set up animation
+              var from, to;
+              var numLines = lineSeries.mapLines.length;
+
+              if (direction == 1) {
+                  from = 0
+                  to = 1;
+                /*
+                 if (planeImage.rotation != 0) {
+                 planeImage.animate({ to: 0, property: "rotation" }, 1000).events.on("animationended", flyPlane);
+                 return;
+                 }*/
+              }
+              else {
+                  from = 1;
+                  to = 0;
+                /*
+                 if (planeImage.rotation != 180) {
+                 planeImage.animate({ to: 180, property: "rotation" }, 1000).events.on("animationended", flyPlane);
+                 return;
+                 }*/
+              }
+
+              // Start the animation
+              var animation = plane.animate({
+                  from: from,
+                  to: to,
+                  property: "position"
+              }, 5000, am4core.ease.sinInOut);
+              animation.events.on("animationended", flyPlane)
+            /*animation.events.on("animationprogress", function(ev) {
+             var progress = Math.abs(ev.progress - 0.5);
+             //console.log(progress);
+             //planeImage.scale += 0.2;
+             });*/
+
+              shadowPlane.animate({
+                  from: from,
+                  to: to,
+                  property: "position"
+              }, 5000, am4core.ease.sinInOut);
+
+              // Increment line, or reverse the direction
+              currentLine += direction;
+              if (currentLine < 0) {
+                  currentLine = 0;
+                  //direction = 1;
+              }
+              else if ((currentLine + 1) > numLines) {
+                  currentLine = numLines - 1;
+                  currentLine = 0;
+                  //direction = -1;
+              }
+
+          }
+
+          // Go!
+          flyPlane();
+
+      }); // end am4core.ready()
+  </script>
+
+</head>
+
+<body id="page-top">
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg text-uppercase fixed-top" style="background-color:#50E3C2;" id="mainNav">
+  <b><a class="navbar-brand js-scroll-trigger" href="index.html" style="font-size: 24px">roadraise</a></b>
+
+  <a class="menu-toggle rounded" href="#">
+    <i class="fas fa-bars"></i>
+  </a>
+  </nav>
+  <nav id="sidebar-wrapper">
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+        <a class="js-scroll-trigger" href="index.html">Home</a>
+        <a class="js-scroll-trigger" href="community.html">Community</a>
+        <a class="js-scroll-trigger" href="trip.html">Trips</a>
+        <a class="js-scroll-trigger" href="plottrip.html">Plan a trip</a>
+        <a class="js-scroll-trigger" href="stop.html">Share your stops</a>
+      </li>
+    </ul>
+  </nav>
+
+  <section class="content-section bg-light" id="trip">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+
+          <img src="img/bus.png" width="100%"/>
+
+          <p>Roadraise captures your road trip experience, helps you raise awareness and funds for a cause you care about, and recommends people and places of interest to you to meet along the way. Hit the road with our community's trips and causes.</p>
+
+          <a class="btn btn-warning btn-xl js-scroll-trigger" href="plottrip.html">Share Your Road Trip</a>
+
+          <br/>
+          <br/>
+<!---classified the h2 for the "trips" to make it much nicer and adding margin/padding around it.-->
+          <h2 class = "header">Trips</h2>
+
+          <div class="row">
+            <div class="col-sm-4">
+              <div class="card">
+                <img class="card-img" src="img/ng.jpg" alt="Card image">
+                <div class="card-img-overlay">
+                  <h4 style="color:white" class="card-title"><a href="trip.html" style="color:white">NY-NOLA, Startup Bus</a></h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card">
+                <img class="card-img" src="img/pch.jpeg" alt="Card image">
+                <div class="card-img-overlay">
+                  <h4 style="color:white" class="card-title">Pacific Coast Dreams</h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card">
+                <img class="card-img" src="img/austin.jpeg" alt="Card image">
+                <div class="card-img-overlay">
+                  <h4 style="color:white" class="card-title">Austin Bound</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+<!--I've inputed the images for the causes starting here!-->
+          <h2 class="header">Causes</h2>
+
+          <div class="row">
+            <div class="col-sm-4">
+              <div class="card bg-info" style="min-height:10em">
+                <img class="card-img" src="img/hcu.png" alt="Card image">
+                <div class="card-img-overlay">
+                  <h4 style="color:white" class="card-title"></h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card bg-info" style="min-height:10em">
+                <img class="card-img" src="img/bees.jpg" alt="Card image">
+                <div class="card-img-overlay">
+                  <h4 style="color:white" class="card-title"></h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card bg-info" style="min-height:10em">
+                <img class="card-img" src="img/alzheimer.jpeg" alt="Card image">
+                <div class="card-img-overlay">
+                  <h4 style="color:white" class="card-title"></h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h2 class = "header">Routes for Inspiration</h2>
+
+          <div class="row">
+            <div class = "col-lg-10 mx-auto">
+            <div id="chartdiv"></div>
+          </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded js-scroll-trigger" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Plugin JavaScript -->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="js/main.js"></script>
+
+</body>
+
+</html>

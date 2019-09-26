@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>RoadRaise</title>
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom Fonts -->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+  <link href="vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link href="css/roadraise.css" rel="stylesheet">
+
+  <!-- Resources -->
+  <script src="https://www.amcharts.com/lib/4/core.js"></script>
+  <script src="https://www.amcharts.com/lib/4/maps.js"></script>
+  <script src="https://www.amcharts.com/lib/4/geodata/worldLow.js"></script>
+  <script src="https://www.amcharts.com/lib/4/themes/dark.js"></script>
+  <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+
+  <!-- Chart code -->
+  <script>
+      am4core.ready(function() {
+
+          // Themes begin
+          am4core.useTheme(am4themes_dark);
+          am4core.useTheme(am4themes_animated);
+          // Themes end
+
+          // Create map instance
+          var chart = am4core.create("chartdiv", am4maps.MapChart);
+          chart.geodata = am4geodata_worldLow;
+          chart.projection = new am4maps.projections.Miller();
+          chart.homeZoomLevel = 8;
+          chart.homeGeoPoint = {
+              latitude: 36.1627,
+              longitude: -86.7816
+          };
+
+          // Create map polygon series
+          var polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
+          polygonSeries.useGeodata = true;
+          polygonSeries.mapPolygons.template.fill = chart.colors.getIndex(0).lighten(0.5);
+          polygonSeries.mapPolygons.template.nonScalingStroke = true;
+          polygonSeries.exclude = ["AQ"];
+
+          // Add line bullets
+          var cities = chart.series.push(new am4maps.MapImageSeries());
+          cities.mapImages.template.nonScaling = true;
+
+          var city = cities.mapImages.template.createChild(am4core.Circle);
+          city.radius = 6;
+          city.fill = chart.colors.getIndex(0).brighten(-0.2);
+          city.strokeWidth = 2;
+          city.stroke = am4core.color("#fff");
+
+          function addCity(coords, title) {
+              var city = cities.mapImages.create();
+              city.latitude = coords.latitude;
+              city.longitude = coords.longitude;
+              city.tooltipText = title;
+              return city;
+          }
+
+          var ny = addCity({ "latitude": 40.725910, "longitude": -74.004753 }, "New York");
+          var nj = addCity({ "latitude": 40.058323, "longitude": -74.405663 }, "New Jersey");
+          var dc = addCity({ "latitude": 38.907192, "longitude": -77.036873}, "Washington DC");
+          var nc = addCity({ "latitude": 35.779591, "longitude": -78.638176 }, "North Carolina");
+          var ga = addCity({ "latitude": 33.748997, "longitude": -84.387985 }, "Georgia");
+          var la = addCity({ "latitude": 30.748997, "longitude": -90.387985 }, "New Orleans");
+
+
+          // Add lines
+          var lineSeries = chart.series.push(new am4maps.MapArcSeries());
+          lineSeries.mapLines.template.line.strokeWidth = 2;
+          lineSeries.mapLines.template.line.strokeOpacity = 0.5;
+          lineSeries.mapLines.template.line.stroke = city.fill;
+          lineSeries.mapLines.template.line.nonScalingStroke = true;
+          lineSeries.mapLines.template.line.strokeDasharray = "1,1";
+          lineSeries.zIndex = 10;
+
+          var shadowLineSeries = chart.series.push(new am4maps.MapLineSeries());
+          shadowLineSeries.mapLines.template.line.strokeOpacity = 0;
+          shadowLineSeries.mapLines.template.line.nonScalingStroke = true;
+          shadowLineSeries.mapLines.template.shortestDistance = false;
+          shadowLineSeries.zIndex = 5;
+
+          function addLine(from, to) {
+              var line = lineSeries.mapLines.create();
+              line.imagesToConnect = [from, to];
+              line.line.controlPointDistance = -0.3;
+
+              var shadowLine = shadowLineSeries.mapLines.create();
+              shadowLine.imagesToConnect = [from, to];
+
+              return line;
+          }
+
+          addLine(ny, nj);
+          addLine(nj, dc);
+          addLine(dc, nc);
+          addLine(nc, ga);
+          addLine(ga, la);
+
+          // Add plane
+          var plane = lineSeries.mapLines.getIndex(0).lineObjects.create();
+          plane.position = 0;
+          plane.width = 48;
+          plane.height = 48;
+
+          plane.adapter.add("scale", function(scale, target) {
+              return 0.5 * (1 - (Math.abs(0.5 - target.position)));
+          })
+
+          var planeImage = plane.createChild(am4core.Sprite);
+          planeImage.scale = 0.02;
+          planeImage.horizontalCenter = "middle";
+          planeImage.verticalCenter = "middle";
+          planeImage.path = "M488 128h-8V80c0-44.8-99.2-80-224-80S32 35.2 32 80v48h-8c-13.25 0-24 10.74-24 24v80c0 13.25 10.75 24 24 24h8v160c0 17.67 14.33 32 32 32v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h192v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h6.4c16 0 25.6-12.8 25.6-25.6V256h8c13.25 0 24-10.75 24-24v-80c0-13.26-10.75-24-24-24zM112 400c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm16-112c-17.67 0-32-14.33-32-32V128c0-17.67 14.33-32 32-32h256c17.67 0 32 14.33 32 32v128c0 17.67-14.33 32-32 32H128zm272 112c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z";
+          planeImage.fill = chart.colors.getIndex(2).brighten(-0.2);
+          planeImage.strokeOpacity = 0;
+
+          var shadowPlane = shadowLineSeries.mapLines.getIndex(0).lineObjects.create();
+          shadowPlane.position = 0;
+          shadowPlane.width = 48;
+          shadowPlane.height = 48;
+
+          /*
+          var shadowPlaneImage = shadowPlane.createChild(am4core.Sprite);
+          shadowPlaneImage.scale = 0.02;
+          shadowPlaneImage.horizontalCenter = "middle";
+          shadowPlaneImage.verticalCenter = "middle";
+          shadowPlaneImage.path = "M488 128h-8V80c0-44.8-99.2-80-224-80S32 35.2 32 80v48h-8c-13.25 0-24 10.74-24 24v80c0 13.25 10.75 24 24 24h8v160c0 17.67 14.33 32 32 32v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h192v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h6.4c16 0 25.6-12.8 25.6-25.6V256h8c13.25 0 24-10.75 24-24v-80c0-13.26-10.75-24-24-24zM112 400c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm16-112c-17.67 0-32-14.33-32-32V128c0-17.67 14.33-32 32-32h256c17.67 0 32 14.33 32 32v128c0 17.67-14.33 32-32 32H128zm272 112c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z";
+          shadowPlaneImage.fill = am4core.color("#000");
+          shadowPlaneImage.strokeOpacity = 0;
+
+          shadowPlane.adapter.add("scale", function(scale, target) {
+              target.opacity = (0.6 - (Math.abs(0.5 - target.position)));
+              return 0.5 - 0.3 * (1 - (Math.abs(0.5 - target.position)));
+          })
+          */
+
+          // Plane animation
+          var currentLine = 0;
+          var direction = 1;
+          function flyPlane() {
+
+              // Get current line to attach plane to
+              plane.mapLine = lineSeries.mapLines.getIndex(currentLine);
+              plane.parent = lineSeries;
+              planeImage.rotation = 190;
+              /*
+              shadowPlane.mapLine = shadowLineSeries.mapLines.getIndex(currentLine);
+              shadowPlane.parent = shadowLineSeries;
+              */
+              //shadowPlaneImage.rotation = planeImage.rotation;
+
+              // Set up animation
+              var from, to;
+              var numLines = lineSeries.mapLines.length;
+
+              if (direction == 1) {
+                  from = 0
+                  to = 1;
+                  /*
+                  if (planeImage.rotation != 0) {
+                      planeImage.animate({ to: 0, property: "rotation" }, 1000).events.on("animationended", flyPlane);
+                      return;
+                  }*/
+              }
+              else {
+                  from = 1;
+                  to = 0;
+                  /*
+                  if (planeImage.rotation != 180) {
+                      planeImage.animate({ to: 180, property: "rotation" }, 1000).events.on("animationended", flyPlane);
+                      return;
+                  }*/
+              }
+
+              // Start the animation
+              var animation = plane.animate({
+                  from: from,
+                  to: to,
+                  property: "position"
+              }, 5000, am4core.ease.sinInOut);
+              animation.events.on("animationended", flyPlane)
+            /*animation.events.on("animationprogress", function(ev) {
+             var progress = Math.abs(ev.progress - 0.5);
+             //console.log(progress);
+             //planeImage.scale += 0.2;
+             });*/
+
+              shadowPlane.animate({
+                  from: from,
+                  to: to,
+                  property: "position"
+              }, 5000, am4core.ease.sinInOut);
+
+              // Increment line, or reverse the direction
+              currentLine += direction;
+              if (currentLine < 0) {
+                  currentLine = 0;
+                  //direction = 1;
+              }
+              else if ((currentLine + 1) > numLines) {
+                  currentLine = numLines - 1;
+                  currentLine = 0;
+                  //direction = -1;
+              }
+
+          }
+
+          // Go!
+          flyPlane();
+
+      }); // end am4core.ready()
+  </script>
+
+</head>
+
+<body id="page-top">
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg text-uppercase fixed-top" style="background-color:#50E3C2;" id="mainNav">
+  <b><a class="navbar-brand js-scroll-trigger" href="index.html" style="font-size: 24px">RoadRaise</a></b>
+
+  <a class="menu-toggle rounded" href="#">
+    <i class="fas fa-bars"></i>
+  </a>
+  </nav>
+  <nav id="sidebar-wrapper">
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-item">
+        <a class="js-scroll-trigger" href="index.html">Home</a>
+        <a class="js-scroll-trigger" href="community.html">Community</a>
+        <a class="js-scroll-trigger" href="trip.html">Trips</a>
+        <a class="js-scroll-trigger" href="plottrip.html">Plan a trip</a>
+        <a class="js-scroll-trigger" href="stop.html">Share your stops</a>
+      </li>
+    </ul>
+  </nav>
+
+  <section class="content-section bg-light" id="trip">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+          <h2>Our Road Trip Story</h2>
+          <p>Chris, Nadine, Yeremia, and Aasta are on a cross country road trip from New York to New Orleans creating the roadraise startup in 3 days.</p>
+
+          <p>Giving back to the community is a big part of our journey, and we'd like to invite you to join us in giving back.</p>
+
+          <img class="card-img-top" src="img/team-front.jpg">
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section bg-light" id="cause">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+          <h2>Our Cause</h2>
+          <div class="card">
+            <img class="card-img-top" src="img/cause.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Hope Center Uganda</h5>
+              <p class="card-text">HCU's mission and efforts to educate and empower women and children in post-war Uganda really spoke to us. The business education they are receiving gets them similar business opportunities that we seek on the Startup Bus. Please help get the Hope-Mobile repaired so Hope Center Uganda can continue their great work without cutting funding to any of their vital programs.</p>
+              <a href="https://www.globalgiving.org/fundraisers/helpinghopemobile/" class="btn"><img src="https://www.globalgiving.org/img/buttons/donate_now.png" alt="Donate Now"/></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trip -->
+  <section class="content-section bg-light" id="stops">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+          <h2>Stops</h2>
+
+          <div class="card">
+
+            <div id="chartdiv"></div>
+
+            <div class="card-body">
+              <h5 class="card-title">Our Journey</h5>
+              <p class="card-text">Places we've been, places we're going</p>
+            </div>
+          </div>
+
+          <h4>7/24/2019</h4>
+
+          <div class="card">
+            <img class="card-img-top" src="img/ny.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">New York, NY</h5>
+              <p class="card-text">Flatiron Health. First livestream of the Startup Bus journey.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <img class="card-img-top" src="img/ng.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">NJ</h5>
+              <p class="card-text">A Rest Stop. So memorable we forgot where it was.</p>
+            </div>
+          </div>
+
+            <div class="card">
+              <img class="card-img-top" src="img/dc.jpg" alt="Card image cap">
+                <div class="card-body">
+                <h5 class="card-title">Washington, D.C.</h5>
+                <p class="card-text">MAKE. Where we got lost finding food. 'Cause reasons. And a jingle came to me walking through the hallway.</p>
+              </div>
+            </div>
+
+          <div class="card">
+            <img class="card-img-top" src="img/team.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Raleigh, NC</h5>
+              <p class="card-text">Holiday Inn. Land of Lebanese food and working all night.</p>
+            </div>
+          </div>
+
+          <h4>7/25/2019</h4>
+
+          <div class="card">
+            <img class="card-img-top" src="img/sc.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Charlotte, SC</h5>
+              <p class="card-text">Advent Coworking! Awesome coffee and wandering for food.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <img class="card-img-top" src="img/asheville.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Asheville, NC</h5>
+              <p class="card-text">Rest stop - no one got hit by cars, we promise.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <img class="card-img-top" src="img/chattanooga.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Chattanooga, TN</h5>
+              <p class="card-text">The Edney Innovation Center - 10GB Internet!</p>
+            </div>
+          </div>
+
+          <h4>7/26/2019</h4>
+
+          <div class="card">
+            <img class="card-img-top" src="img/atlanta.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Atlanta, GA</h5>
+              <p class="card-text">Twilio, WeWork</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <img class="card-img-top" src="img/hw.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Montgomery, AL</h5>
+              <p class="card-text">Such a historical place. Many stops closed. :(</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <img class="card-img-top" src="img/mississippi.jpg" alt="Card image cap">
+            <div class="card-body">
+              <h5 class="card-title">Biloxi, MS</h5>
+              <p class="card-text">Oh, the dark</p>
+            </div>
+          </div>
+
+          <h4>7/28/2019</h4>
+
+          <div class="card">
+            <!--<img class="card-img-top" src="img/team.jpg" alt="Card image cap">-->
+            <div class="card-body">
+              <h5 class="card-title">New Orleans, LA</h5>
+              <p class="card-text">Future pitch adventures</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded js-scroll-trigger" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Plugin JavaScript -->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for this template -->
+  <script src="js/main.js"></script>
+
+</body>
+
+</html>
